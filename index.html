@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Resonance Video</title>
+<link rel="stylesheet" href="assets/app.css"/>
+</head>
+<body class="bg-surface-container-lowest text-on-surface antialiased font-body-md overflow-x-hidden selection:bg-primary-container selection:text-on-primary">
+
+<!-- SIDEBAR -->
+<aside class="hidden md:flex fixed left-0 top-0 bottom-0 w-64 z-30 bg-surface-container-low border-r border-outline-variant/30 shadow-2xl flex-col justify-between py-6 px-4 overflow-y-auto">
+  <div class="flex flex-col gap-4">
+    <div class="flex items-center gap-3 px-2">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-container to-surface-dim border border-primary/30 flex items-center justify-center glow-cyan-sm">
+        <span class="material-symbols-outlined text-on-primary text-xl fill">movie</span>
+      </div>
+      <div class="flex flex-col">
+        <span class="text-headline-sm font-bold text-primary tracking-tight">Resonance</span>
+        <span id="sbStatus" class="text-label-sm text-tertiary flex items-center gap-1.5 font-mono-metric"><span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span>Video Library</span>
+      </div>
+    </div>
+    <button data-act="newPlaylist" class="w-full mt-2 py-2.5 px-4 rounded-lg bg-surface-container-high hover:bg-surface-variant/40 text-primary hover:text-on-surface border border-outline-variant/40 text-label-md flex items-center justify-center gap-2 transition active:scale-[0.98]">
+      <span class="material-symbols-outlined text-base">add</span><span>New Playlist</span>
+    </button>
+    <nav class="flex flex-col gap-1 mt-3">
+      <a data-nav="library" href="#" class="text-primary font-bold border-l-2 border-primary bg-primary/10 px-4 py-2 flex items-center gap-3 rounded-r-lg"><span class="material-symbols-outlined text-lg fill">video_library</span><span class="text-label-md">Library</span></a>
+      <a data-nav="continue" href="#" class="text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/40 flex items-center gap-3 px-4 py-2 rounded-lg transition"><span class="material-symbols-outlined text-lg">history</span><span class="text-label-md">Continue Watching</span></a>
+      <a data-nav="recent" href="#" class="text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/40 flex items-center gap-3 px-4 py-2 rounded-lg transition"><span class="material-symbols-outlined text-lg">schedule</span><span class="text-label-md">Recently Added</span></a>
+      <a data-nav="playlists" href="#" class="text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/40 flex items-center gap-3 px-4 py-2 rounded-lg transition"><span class="material-symbols-outlined text-lg">playlist_play</span><span class="text-label-md">Playlists</span></a>
+      <div class="pt-4 pb-1 px-4 text-label-sm text-outline tracking-wider">YOUR PLAYLISTS</div>
+      <div id="sbPlaylists" class="flex flex-col gap-1"></div>
+    </nav>
+  </div>
+  <div class="mt-6">
+    <div id="sbFolder" class="px-3 py-3 rounded-xl bg-surface-container/60 border border-outline-variant/30 mb-4 text-label-sm"></div>
+    <div class="flex flex-col gap-1 border-t border-outline-variant/30 pt-4">
+      <a data-act="pickFolder" href="#" class="text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/40 flex items-center gap-3 px-4 py-2 rounded-lg transition"><span class="material-symbols-outlined text-lg">folder_open</span><span class="text-label-md">Change Folder</span></a>
+      <a data-act="rescan" href="#" class="text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/40 flex items-center gap-3 px-4 py-2 rounded-lg transition"><span class="material-symbols-outlined text-lg">sync</span><span class="text-label-md">Rescan Folder</span></a>
+    </div>
+  </div>
+</aside>
+
+<!-- TOP BAR -->
+<header class="fixed top-0 right-0 left-0 md:left-64 z-20 h-16 bg-surface/80 backdrop-blur-md border-b border-outline-variant/20 flex items-center justify-between px-4 md:px-8">
+  <div class="relative w-full max-w-md">
+    <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-outline text-lg pointer-events-none">search</span>
+    <input id="search" class="w-full bg-surface-container-low/90 border border-outline-variant/40 rounded-full pl-10 pr-16 py-1.5 text-body-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container/40 transition" placeholder="Search your library…" type="text"/>
+    <div class="absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-surface-variant/60 border border-outline-variant/40 text-[10px] font-mono-metric text-on-surface-variant">⌘K</div>
+  </div>
+  <div class="flex items-center gap-4 ml-4">
+    <div id="topStatus" class="hidden xl:flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-high border border-outline-variant/30 text-label-sm font-mono-metric text-on-surface-variant"></div>
+    <button data-act="pickFolder" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-container hover:bg-primary-container/90 text-on-primary text-label-md transition active:scale-[0.97] glow-cyan-sm whitespace-nowrap">
+      <span class="material-symbols-outlined text-base">create_new_folder</span><span>Select Folder</span>
+    </button>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main class="md:ml-64 pt-20 pb-32 px-4 md:px-8 max-w-[1720px] mx-auto space-y-10">
+
+  <section id="emptyState" class="hidden"></section>
+
+  <div id="appArea" class="space-y-10">
+    <!-- HERO -->
+    <section id="hero" class="relative rounded-2xl overflow-hidden border border-outline-variant/40 bg-surface-container-lowest shadow-2xl">
+      <div class="relative w-full aspect-[21/9] min-h-[380px] max-h-[640px] bg-black">
+        <div id="heroBg" class="absolute inset-0 bg-cover bg-center brightness-[0.7] contrast-[1.08] bg-gradient-to-br from-surface-container-high to-surface-container-lowest transition-opacity duration-300"></div>
+        <video id="video" class="absolute inset-0 w-full h-full object-contain bg-black opacity-0 cursor-pointer" playsinline preload="metadata"></video>
+        <div class="fade absolute inset-0 pointer-events-none bg-gradient-to-t from-[#0C0F17] via-[#0C0F17]/40 to-transparent"></div>
+        <div class="fade absolute inset-0 pointer-events-none bg-gradient-to-r from-[#0C0F17]/80 via-transparent to-transparent"></div>
+        <div class="absolute top-4 left-4 right-4 md:left-6 md:right-6 flex items-center justify-between pointer-events-none z-10">
+          <div id="heroChips" class="flex items-center gap-2 flex-wrap"></div>
+          <div class="flex items-center gap-2 pointer-events-auto">
+            <button id="btnCC" title="Subtitles" class="hidden p-1.5 rounded-lg bg-black/50 hover:bg-black/80 backdrop-blur-md border border-white/10 text-on-surface transition"><span class="material-symbols-outlined text-base">subtitles</span></button>
+            <button id="btnPip" title="Picture in picture" class="p-1.5 rounded-lg bg-black/50 hover:bg-black/80 backdrop-blur-md border border-white/10 text-on-surface transition"><span class="material-symbols-outlined text-base">picture_in_picture_alt</span></button>
+            <button id="btnFs" title="Fullscreen (F)" class="p-1.5 rounded-lg bg-black/50 hover:bg-black/80 backdrop-blur-md border border-white/10 text-on-surface transition"><span class="material-symbols-outlined text-base">fullscreen</span></button>
+          </div>
+        </div>
+        <button id="heroPlay" class="fade absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-primary-container text-on-primary flex items-center justify-center glow-cyan hover:scale-105 active:scale-95 transition z-10">
+          <span class="material-symbols-outlined text-4xl fill">play_arrow</span>
+        </button>
+        <div id="heroInfo" class="fade absolute left-0 bottom-0 p-6 md:p-8 max-w-3xl space-y-3 pointer-events-none z-10"></div>
+      </div>
+    </section>
+
+    <!-- PILLS -->
+    <section class="flex items-center justify-between gap-4 overflow-x-auto pb-2 border-b border-outline-variant/20">
+      <div id="pills" class="flex items-center gap-2.5 flex-nowrap"></div>
+      <div class="flex items-center gap-2 text-label-sm text-on-surface-variant flex-shrink-0">
+        <span>Sort by:</span>
+        <select id="sort" class="bg-surface-container-low border border-outline-variant/40 text-on-surface text-label-sm rounded-lg px-2.5 py-1 focus:ring-1 focus:ring-primary focus:outline-none">
+          <option value="recent">Recently Added</option>
+          <option value="title">Title A–Z</option>
+          <option value="size">Largest File</option>
+          <option value="year">Release Year</option>
+        </select>
+      </div>
+    </section>
+
+    <!-- CONTINUE -->
+    <section id="continueSection" class="space-y-4"></section>
+
+    <!-- LIBRARY -->
+    <section id="librarySection" class="space-y-4"></section>
+
+    <!-- PLAYLISTS + STATS -->
+    <section id="playlistsSection" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2 space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3"><span class="material-symbols-outlined text-primary text-xl">playlist_play</span><h2 class="text-headline-sm">Playlists</h2></div>
+          <button data-act="newPlaylist" class="text-label-sm text-primary hover:underline">+ New Playlist</button>
+        </div>
+        <div id="playlistGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+      </div>
+      <div id="statsPanel" class="p-6 rounded-2xl bg-surface-container-low border border-outline-variant/30 space-y-5 h-fit"></div>
+    </section>
+  </div>
+</main>
+
+<!-- DOCK -->
+<footer class="fixed bottom-0 left-0 right-0 h-[88px] z-40 bg-[#131826]/90 backdrop-blur-xl border-t border-white/10 px-4 md:px-8 flex items-center justify-between shadow-2xl gap-4">
+  <div class="flex items-center gap-4 w-80 min-w-0 max-md:w-auto">
+    <div id="dockThumb" class="relative w-14 h-14 rounded-lg overflow-hidden bg-surface-container flex-shrink-0 border border-outline-variant/40 flex items-center justify-center"><span class="material-symbols-outlined text-outline/60">movie</span></div>
+    <div class="flex flex-col min-w-0">
+      <span id="dockTitle" class="text-label-md text-on-surface truncate font-semibold">Nothing playing</span>
+      <span id="dockSub" class="text-label-sm text-outline truncate">Pick a title from your library</span>
+      <span id="dockTech" class="text-[10px] font-mono-metric text-tertiary mt-0.5 truncate"></span>
+    </div>
+  </div>
+  <div class="flex flex-col items-center gap-1.5 max-w-2xl w-full px-2">
+    <div class="flex items-center gap-5">
+      <button id="btnPrev" class="text-on-surface-variant hover:text-primary transition" title="Previous"><span class="material-symbols-outlined text-xl">skip_previous</span></button>
+      <button id="btnBack" class="text-on-surface-variant hover:text-primary transition" title="Back 10s (←)"><span class="material-symbols-outlined text-xl">replay_10</span></button>
+      <button id="btnPlay" class="w-12 h-12 rounded-full bg-primary-container hover:bg-primary-fixed-dim text-[#0C0F17] flex items-center justify-center glow-cyan active:scale-[0.96] transition" title="Play / Pause (Space)"><span id="playIcon" class="material-symbols-outlined text-2xl fill">play_arrow</span></button>
+      <button id="btnFwd" class="text-on-surface-variant hover:text-primary transition" title="Forward 10s (→)"><span class="material-symbols-outlined text-xl">forward_10</span></button>
+      <button id="btnNext" class="text-on-surface-variant hover:text-primary transition" title="Next"><span class="material-symbols-outlined text-xl">skip_next</span></button>
+    </div>
+    <div class="w-full flex items-center gap-3">
+      <span id="tCur" class="text-label-sm font-mono-metric text-primary tnum w-14 text-right">0:00</span>
+      <div id="scrub" class="relative flex-1 h-5 cursor-pointer flex items-center group touch-none">
+        <div class="relative w-full h-1.5 bg-[#1E2538] rounded-full">
+          <div id="scrubFill" class="h-full bg-primary-container rounded-full w-0 relative"><div class="absolute right-0 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-primary ring-2 ring-primary-container/40 group-hover:scale-125 transition"></div></div>
+        </div>
+        <div id="scrubTip" class="hidden absolute -top-6 px-1.5 py-0.5 rounded bg-black/80 border border-white/10 text-[10px] font-mono-metric text-on-surface -translate-x-1/2 pointer-events-none">0:00</div>
+      </div>
+      <span id="tDur" class="text-label-sm font-mono-metric text-outline tnum w-14">0:00</span>
+    </div>
+  </div>
+  <div class="flex items-center gap-3 w-80 justify-end max-md:hidden">
+    <button id="btnSpeed" class="px-2 py-1 rounded bg-surface-container-high hover:bg-surface-variant text-label-sm font-mono-metric text-on-surface border border-outline-variant/30 transition" title="Playback speed">1×</button>
+    <div class="flex items-center gap-2">
+      <button id="btnMute" class="text-on-surface-variant hover:text-on-surface"><span id="volIcon" class="material-symbols-outlined text-lg">volume_up</span></button>
+      <div id="vol" class="relative w-20 h-5 cursor-pointer flex items-center touch-none"><div class="w-full h-1 bg-[#1E2538] rounded-full"><div id="volFill" class="h-full bg-primary-container rounded-full" style="width:80%"></div></div></div>
+    </div>
+    <button id="btnTheater" class="p-2 text-primary hover:bg-surface-container-high rounded-lg transition" title="Jump to player"><span class="material-symbols-outlined text-lg">branding_watermark</span></button>
+  </div>
+</footer>
+
+<div id="modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm items-center justify-center p-4"></div>
+<div id="toast" class="fixed left-1/2 -translate-x-1/2 bottom-28 z-50 px-4 py-2 rounded-lg bg-[#161C2E]/95 glow-cyan-border text-label-md text-on-surface opacity-0 pointer-events-none transition-opacity duration-300 max-w-[90vw]"></div>
+<input id="folderInput" type="file" webkitdirectory multiple class="hidden"/>
+
+<script id="app">
+(() => {
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---------- constants ---------- */
+const VIDEO_EXT = new Set('mp4 m4v mkv webm mov avi wmv flv f4v mpg mpeg mpe m2v ts m2ts mts vob ogv ogm 3gp 3g2 divx rm rmvb asf mxf'.split(' '));
+const IGNORE_EXT = new Set('jpg jpeg png gif webp bmp tif tiff svg txt nfo srt vtt ass ssa sub idx json xml html htm exe dll zip rar 7z iso img pdf doc docx xls xlsx db ini url lnk sfv md5 sha1 torrent part tmp log cue mp3 flac wav m4a aac ogg opus wma'.split(' '));
+const SUB_EXT = new Set(['srt', 'vtt']);
+const JSON_NAME = 'resonance-playlists.json';
+const MIN_UNKNOWN = 20 * 1024 * 1024; // files with unknown extensions count as videos if >= 20 MB
+const LS = { folder: 'rv.folder', playlists: 'rv.playlists', progress: 'rv.progress', volume: 'rv.volume' };
+const SPEEDS = [0.75, 1, 1.25, 1.5, 2];
+
+const jget = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } };
+const jset = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+const jdel = k => { try { localStorage.removeItem(k); } catch {} };
+
+/* ---------- IndexedDB (folder handle + thumbnail cache) ---------- */
+const idb = (() => {
+  let p;
+  const open = () => p || (p = new Promise((res, rej) => {
+    const r = indexedDB.open('resonance-video', 1);
+    r.onupgradeneeded = () => { r.result.createObjectStore('kv'); r.result.createObjectStore('thumbs'); };
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  }));
+  const tx = async (store, mode, fn) => {
+    const db = await open();
+    return new Promise((res, rej) => {
+      const t = db.transaction(store, mode); const rq = fn(t.objectStore(store));
+      t.oncomplete = () => res(rq && rq.result); t.onerror = () => rej(t.error);
+    });
+  };
+  return {
+    get: (s, k) => tx(s, 'readonly', o => o.get(k)).catch(() => undefined),
+    set: (s, k, v) => tx(s, 'readwrite', o => o.put(v, k)).catch(() => {}),
+    clear: s => tx(s, 'readwrite', o => o.clear()).catch(() => {})
+  };
+})();
+
+/* ---------- state ---------- */
+const state = {
+  handle: null, folderName: '', writable: false, needsPermission: false, scanning: false, fallback: false,
+  items: [], byId: new Map(), playlists: [], progress: {},
+  queue: [], qi: -1, currentId: null, filter: 'all', sort: 'recent', search: '', limit: 60,
+  subsOn: true, attempt: 0, started: false
+};
+
+/* ---------- helpers ---------- */
+const fmtSize = b => b >= 1073741824 ? (b / 1073741824).toFixed(2) + ' GB' : b >= 1048576 ? Math.round(b / 1048576) + ' MB' : Math.round(b / 1024) + ' KB';
+const fmtTime = s => { if (!isFinite(s)) return '0:00'; s = Math.floor(s); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0'); };
+const fmtDur = s => { if (!isFinite(s) || !s) return ''; const h = Math.floor(s / 3600), m = Math.round(s % 3600 / 60); return h ? `${h}h ${m}m` : `${m}m`; };
+const resLabel = h => h >= 2000 ? '4K' : h >= 1000 ? '1080p' : h >= 700 ? '720p' : h ? h + 'p' : '';
+const qualityTag = n => /2160p|\b4k\b|uhd/i.test(n) ? '4K' : /1080p/i.test(n) ? '1080p' : /720p/i.test(n) ? '720p' : /480p/i.test(n) ? '480p' : '';
+const uid = () => Math.random().toString(36).slice(2, 10);
+function parseName(name) {
+  const base = name.replace(/\.[^.]+$/, '');
+  const ym = base.match(/(?:^|[\s._(\[-])((?:19|20)\d{2})(?=$|[\s._)\]-])/);
+  const year = ym ? ym[1] : '';
+  let t = base.replace(/[._]+/g, ' ');
+  if (ym) { const i = t.indexOf(year); if (i > 2) t = t.slice(0, i); }
+  t = t.replace(/[\[(].*?[\])]/g, ' ').replace(/\b(2160p|1080p|720p|480p|4k|uhd|bluray|brrip|bdrip|webrip|web-dl|webdl|hdtv|hdr10?|dv|x26[45]|h26[45]|hevc|avc|aac|ac3|dts|remux|proper|extended)\b.*$/i, '').replace(/\s+/g, ' ').trim();
+  return { title: t || base, year };
+}
+let toastT;
+function toast(msg, ms = 3800) {
+  const t = $('#toast'); t.textContent = msg; t.style.opacity = 1;
+  clearTimeout(toastT); toastT = setTimeout(() => t.style.opacity = 0, ms);
+}
+const prog = id => state.progress[id];
+const saveProgress = () => jset(LS.progress, state.progress);
+
+/* ---------- storage: playlists JSON ---------- */
+let jsonTimer;
+function savePlaylists() {
+  jset(LS.playlists, state.playlists);
+  clearTimeout(jsonTimer); jsonTimer = setTimeout(writeJsonFile, 400);
+}
+async function writeJsonFile() {
+  if (!state.handle) return;
+  try {
+    if ((await state.handle.queryPermission({ mode: 'readwrite' })) !== 'granted') { state.writable = false; return; }
+    state.writable = true;
+    const fh = await state.handle.getFileHandle(JSON_NAME, { create: true });
+    const w = await fh.createWritable();
+    await w.write(JSON.stringify({ version: 1, folder: state.folderName, updated: new Date().toISOString(), playlists: state.playlists }, null, 2));
+    await w.close();
+  } catch (e) { console.warn('JSON write failed', e); }
+}
+async function readJsonFile() {
+  if (!state.handle) return null;
+  try {
+    const fh = await state.handle.getFileHandle(JSON_NAME);
+    const data = JSON.parse(await (await fh.getFile()).text());
+    return Array.isArray(data.playlists) ? data.playlists : null;
+  } catch { return null; }
+}
+async function resetStorage() {
+  state.playlists = []; state.progress = {};
+  jdel(LS.playlists); jdel(LS.progress);
+  await idb.clear('thumbs');
+}
+
+/* ---------- scanning ---------- */
+async function walk(dir, prefix, out, top) {
+  for await (const [name, h] of dir.entries()) {
+    if (name.startsWith('.')) continue;
+    if (h.kind === 'directory') await walk(h, prefix + name + '/', out, top || name);
+    else out.push({ name, path: prefix + name, dir: prefix, top: top || '', getFile: () => h.getFile() });
+  }
+}
+async function buildItems(entries) {
+  const subs = new Map(), cands = [];
+  for (const e of entries) {
+    if (e.name === JSON_NAME) continue;
+    const dot = e.name.lastIndexOf('.'); const ext = dot > 0 ? e.name.slice(dot + 1).toLowerCase() : '';
+    e.ext = ext;
+    if (SUB_EXT.has(ext)) { subs.set((e.dir + e.name.slice(0, dot)).toLowerCase(), e); continue; }
+    if (IGNORE_EXT.has(ext)) continue;
+    cands.push(e);
+  }
+  const items = [];
+  for (let i = 0; i < cands.length; i += 24) {
+    await Promise.all(cands.slice(i, i + 24).map(async e => {
+      try {
+        const file = await e.getFile(); const known = VIDEO_EXT.has(e.ext);
+        if (!known && file.size < MIN_UNKNOWN) return;
+        const { title, year } = parseName(e.name); const dot = e.name.lastIndexOf('.');
+        const sub = subs.get((e.dir + (dot > 0 ? e.name.slice(0, dot) : e.name)).toLowerCase()) || null;
+        items.push({ id: e.path, name: e.name, ext: e.ext || '?', size: file.size, mtime: file.lastModified, file, top: e.top, known, title, year, sub });
+      } catch {}
+    }));
+  }
+  state.items = items; state.byId = new Map(items.map(i => [i.id, i]));
+}
+async function scan() {
+  state.scanning = true; renderAll();
+  const entries = [];
+  try { await walk(state.handle, '', entries, ''); await buildItems(entries); }
+  catch (e) { console.error(e); toast('Could not read the folder: ' + e.message); }
+  const fromFile = await readJsonFile();
+  if (fromFile) { state.playlists = fromFile; jset(LS.playlists, fromFile); }
+  state.scanning = false; state.limit = 60;
+  renderAll();
+  if (state.handle) writeJsonFile();
+}
+
+/* ---------- folder picking ---------- */
+async function pickFolder() {
+  if (!window.showDirectoryPicker) { $('#folderInput').click(); return; }
+  try {
+    const h = await showDirectoryPicker({ mode: 'readwrite', id: 'resonance-video' });
+    await adoptFolder(h);
+  } catch (e) { if (e.name !== 'AbortError') toast('Could not open folder: ' + e.message); }
+}
+async function adoptFolder(h) {
+  const prev = await idb.get('kv', 'dir'); let same = false;
+  if (prev) { try { same = await prev.isSameEntry(h); } catch {} }
+  if (!same) await resetStorage();
+  state.fallback = false; state.needsPermission = false;
+  state.handle = h; state.folderName = h.name;
+  await idb.set('kv', 'dir', h); jset(LS.folder, { name: h.name, at: Date.now() });
+  try { state.writable = (await h.queryPermission({ mode: 'readwrite' })) === 'granted'; } catch { state.writable = false; }
+  stopPlayback();
+  await scan();
+  if (!same) { await writeJsonFile(); toast(`Folder set to “${h.name}”. Playlists were reset.`); }
+}
+async function reconnect() {
+  const h = state.handle; let p;
+  try { p = await h.requestPermission({ mode: 'readwrite' }); state.writable = p === 'granted'; } catch {}
+  if (p !== 'granted') { try { p = await h.requestPermission({ mode: 'read' }); state.writable = false; } catch {} }
+  if (p === 'granted') { state.needsPermission = false; await scan(); }
+  else toast('Permission was not granted.');
+}
+$('#folderInput').addEventListener('change', async e => {
+  const files = [...e.target.files]; if (!files.length) return;
+  const root = files[0].webkitRelativePath.split('/')[0];
+  const prevMeta = jget(LS.folder, null);
+  if (!prevMeta || prevMeta.name !== root) { await resetStorage(); toast(`Folder set to “${root}”. Playlists were reset.`); }
+  state.fallback = true; state.handle = null; state.folderName = root; state.writable = false; state.needsPermission = false;
+  jset(LS.folder, { name: root, at: Date.now(), fallback: true });
+  stopPlayback();
+  const entries = files.map(f => {
+    const rel = f.webkitRelativePath.split('/').slice(1); const name = rel.pop();
+    return { name, path: [...rel, name].join('/'), dir: rel.length ? rel.join('/') + '/' : '', top: rel[0] || '', getFile: () => Promise.resolve(f) };
+  });
+  state.scanning = true; renderAll();
+  await buildItems(entries);
+  state.scanning = false; state.limit = 60; renderAll();
+  e.target.value = '';
+});
+
+/* ---------- thumbnails ---------- */
+const thumbQ = []; let thumbBusy = 0;
+const tkey = it => `${it.id}|${it.size}|${it.mtime}`;
+async function ensureMeta(it) {
+  if (!it || it.meta || it.metaTried) return; it.metaTried = true;
+  const c = await idb.get('thumbs', tkey(it));
+  if (c) { it.meta = c; applyMeta(it); return; }
+  thumbQ.push(it); pump();
+}
+function pump() {
+  while (thumbBusy < 2 && thumbQ.length) {
+    const it = thumbQ.shift(); thumbBusy++;
+    generate(it).then(m => {
+      if (m) { it.meta = m; idb.set('thumbs', tkey(it), m); applyMeta(it); }
+    }).finally(() => { thumbBusy--; pump(); });
+  }
+}
+function generate(it) {
+  return new Promise(res => {
+    const v = document.createElement('video'); v.muted = true; v.preload = 'auto'; v.playsInline = true;
+    let url, to;
+    const done = m => { clearTimeout(to); v.removeAttribute('src'); try { v.load(); } catch {} if (url) URL.revokeObjectURL(url); res(m); };
+    to = setTimeout(() => done(null), 10000);
+    v.onerror = () => done(null);
+    v.onloadedmetadata = () => { const d = v.duration; v.currentTime = isFinite(d) ? Math.min(Math.max(d * 0.12, 1), 120) : 0; };
+    v.onseeked = () => {
+      try {
+        const w = v.videoWidth, h = v.videoHeight;
+        if (!w) return done({ dur: v.duration || 0, w: 0, h: 0 });
+        const c = document.createElement('canvas'); c.width = 480; c.height = Math.round(480 * h / w);
+        c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+        done({ img: c.toDataURL('image/jpeg', 0.72), dur: v.duration, w, h });
+      } catch { done(null); }
+    };
+    url = URL.createObjectURL(it.file); v.src = url;
+  });
+}
+function applyMeta(it) {
+  $$('.pz').forEach(el => { if (el.dataset.id === it.id) el.innerHTML = pzInner(it, !el.dataset.nodur); });
+  const cur = heroItem(); if (cur && cur.id === it.id) renderHero();
+  if (state.currentId === it.id) updateNow();
+}
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if (e.isIntersecting) { io.unobserve(e.target); ensureMeta(state.byId.get(e.target.dataset.id)); }
+}), { rootMargin: '200px' });
+function observePz() {
+  $$('.pz').forEach(el => { const it = state.byId.get(el.dataset.id); if (it && !it.meta && !it.metaTried) io.observe(el); });
+}
+
+/* ---------- templates ---------- */
+const badge = (t, c = 'plain') => `<span class="px-2 py-0.5 rounded bg-black/75 backdrop-blur-md text-[10px] font-mono-metric ${c === 'tertiary' ? 'text-tertiary border border-tertiary/30' : 'text-on-surface-variant'}">${esc(t)}</span>`;
+function pzInner(it, showDur = true) {
+  const m = it.meta;
+  const res = (m && m.h) ? resLabel(m.h) : qualityTag(it.name);
+  const img = m && m.img
+    ? `<img src="${m.img}" alt="" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"/>`
+    : `<div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-surface-container-high via-surface-container to-surface-container-lowest"><span class="material-symbols-outlined text-4xl text-outline/50">movie</span></div>`;
+  return img + `<div class="absolute top-2.5 left-2.5 flex gap-1.5">${res ? badge(res, 'tertiary') : ''}${badge(it.ext.toUpperCase())}${it.broken ? badge('NO CODEC') : ''}</div>`
+    + (showDur && m && m.dur ? `<span class="absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded bg-black/80 font-mono-metric text-[11px] text-on-surface">${fmtDur(m.dur)}</span>` : '');
+}
+function card(it, opts = {}) {
+  const p = prog(it.id); const pct = p && p.d ? Math.min(100, p.t / p.d * 100) : 0;
+  const playing = state.currentId === it.id;
+  const left = p && p.d ? fmtDur(Math.max(0, p.d - p.t)) + ' left' : '';
+  return `<div class="group relative rounded-xl bg-surface-container-low border ${playing ? 'border-primary/70' : 'border-outline-variant/30'} hover:border-primary/50 overflow-hidden transition-all duration-300 hover:-translate-y-1 shadow-lg cursor-pointer" data-card="${esc(it.id)}">
+    <div class="thumbwrap relative aspect-video w-full overflow-hidden bg-surface-container">
+      <div class="pz absolute inset-0" data-id="${esc(it.id)}" ${opts.cont ? 'data-nodur="1"' : ''}>${pzInner(it, !opts.cont)}</div>
+      <div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/80 via-transparent to-transparent pointer-events-none"></div>
+      ${playing ? `<div class="absolute bottom-2.5 left-2.5 flex items-center gap-1.5 px-2 py-0.5 rounded bg-black/80 text-[10px] font-mono-metric text-primary"><span class="eq"><i></i><i></i><i></i></span>NOW PLAYING</div>` : ''}
+      ${opts.cont && left ? `<span class="absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded bg-black/80 font-mono-metric text-[11px] text-on-surface">${left}</span>` : ''}
+      <div class="tw-actions absolute inset-0 flex items-center justify-center gap-2 opacity-0 transition-opacity duration-200 bg-black/50 backdrop-blur-[2px]">
+        <button data-act="play" data-id="${esc(it.id)}" class="w-12 h-12 rounded-full bg-primary-container text-on-primary flex items-center justify-center glow-cyan active:scale-90" title="Play"><span class="material-symbols-outlined text-2xl fill">play_arrow</span></button>
+        <button data-act="addpl" data-id="${esc(it.id)}" class="w-9 h-9 rounded-full bg-surface-container-high/90 text-on-surface hover:text-primary border border-white/10 flex items-center justify-center active:scale-90" title="Add to playlist"><span class="material-symbols-outlined text-lg">playlist_add</span></button>
+        <button data-act="info" data-id="${esc(it.id)}" class="w-9 h-9 rounded-full bg-surface-container-high/90 text-on-surface hover:text-primary border border-white/10 flex items-center justify-center active:scale-90" title="File info"><span class="material-symbols-outlined text-lg">info</span></button>
+      </div>
+    </div>
+    <div class="w-full h-1 bg-surface-container-highest"><div class="h-full bg-primary-container" style="width:${pct}%"></div></div>
+    <div class="p-3.5 space-y-1">
+      <div class="flex items-center justify-between text-label-sm text-outline"><span class="truncate">${esc(it.top || 'Library root')}</span><span class="font-mono-metric text-tertiary flex-shrink-0 ml-2">${esc(fmtSize(it.size))}</span></div>
+      <h3 class="text-label-lg text-on-surface group-hover:text-primary transition-colors line-clamp-1" title="${esc(it.name)}">${esc(it.title)}</h3>
+      <p class="text-body-sm text-on-surface-variant line-clamp-1">${it.year ? esc(it.year) + ' • ' : ''}${p && p.done ? 'Watched' : p && p.t > 5 ? 'Resume at ' + fmtTime(p.t) : esc(it.name)}</p>
+    </div>
+  </div>`;
+}
+
+/* ---------- filtering ---------- */
+function filtered() {
+  let l = state.items; const q = state.search.trim().toLowerCase();
+  if (q) l = l.filter(i => (i.title + ' ' + i.path + ' ' + i.id).toLowerCase().includes(q));
+  const f = state.filter;
+  if (f === 'progress') l = l.filter(i => { const p = prog(i.id); return p && p.t > 5 && !p.done; });
+  else if (f === 'unwatched') l = l.filter(i => { const p = prog(i.id); return !p || (p.t <= 5 && !p.done); });
+  else if (f === 'watched') l = l.filter(i => prog(i.id) && prog(i.id).done);
+  else if (f.startsWith('f:')) l = l.filter(i => i.top === f.slice(2));
+  l = [...l];
+  const s = state.sort;
+  if (s === 'recent') l.sort((a, b) => b.mtime - a.mtime);
+  else if (s === 'title') l.sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true }));
+  else if (s === 'size') l.sort((a, b) => b.size - a.size);
+  else if (s === 'year') l.sort((a, b) => (b.year || 0) - (a.year || 0) || a.title.localeCompare(b.title));
+  return l;
+}
+function continueList() {
+  return Object.entries(state.progress).filter(([id, p]) => state.byId.has(id) && p.t > 5 && !p.done)
+    .sort((a, b) => (b[1].u || 0) - (a[1].u || 0)).slice(0, 8).map(([id]) => state.byId.get(id));
+}
+
+/* ---------- rendering ---------- */
+function renderAll() {
+  renderSidebar(); renderEmpty(); renderHero(); renderPills(); renderContinue(); renderLibrary(); renderPlaylists(); renderStats(); updateNow();
+  observePz();
+}
+function renderSidebar() {
+  $('#sbPlaylists').innerHTML = state.playlists.length ? state.playlists.map(p => `<a href="#" data-act="openPl" data-id="${p.id}" class="text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/40 flex items-center gap-3 px-4 py-2 rounded-lg transition"><span class="material-symbols-outlined text-lg">queue_music</span><span class="text-label-md truncate flex-1">${esc(p.name)}</span><span class="text-label-sm font-mono-metric text-outline">${p.items.length}</span></a>`).join('')
+    : `<div class="px-4 py-2 text-body-sm text-outline">No playlists yet</div>`;
+  const has = state.folderName;
+  $('#sbFolder').innerHTML = has ? `<div class="flex items-center justify-between mb-1.5"><span class="text-on-surface-variant flex items-center gap-1.5 min-w-0"><span class="w-2 h-2 rounded-full ${state.items.length ? 'bg-primary-container glow-cyan-sm' : 'bg-outline'}"></span><span class="truncate">${esc(state.folderName)}</span></span><span class="text-primary font-mono-metric flex-shrink-0 ml-2">${state.items.length} files</span></div>
+    <div class="font-mono-metric text-outline">${state.writable ? 'Playlists → ' + JSON_NAME : 'Playlists → browser storage'}</div>`
+    : `<div class="text-on-surface-variant">No folder selected</div>`;
+  $('#topStatus').innerHTML = has ? `<span class="w-2 h-2 rounded-full ${state.items.length ? 'bg-tertiary' : 'bg-outline'}"></span><span>${esc(state.folderName)} · ${state.items.length} videos</span>` : `<span class="w-2 h-2 rounded-full bg-outline"></span><span>No storage selected</span>`;
+}
+function renderEmpty() {
+  const el = $('#emptyState'), app = $('#appArea');
+  const show = !state.items.length;
+  el.classList.toggle('hidden', !show); app.classList.toggle('hidden', show);
+  if (!show) return;
+  let icon = 'folder_open', title = 'Choose your movie folder', body = 'Pick a folder and Resonance turns it into your own streaming library — every video file inside, any extension, subfolders included.', btn = `<button data-act="pickFolder" class="px-5 py-2.5 rounded-lg bg-primary-container text-on-primary text-label-lg glow-cyan active:scale-95 transition flex items-center gap-2"><span class="material-symbols-outlined">create_new_folder</span>Select Folder</button>`;
+  if (state.scanning) { icon = 'sync'; title = 'Scanning your library…'; body = 'Reading files and building the catalogue.'; btn = ''; }
+  else if (state.needsPermission) { icon = 'lock_open'; title = `Reconnect “${esc(state.folderName)}”`; body = 'Your browser needs a quick OK before it can read the saved folder again. Your playlists are untouched.'; btn = `<button data-act="reconnect" class="px-5 py-2.5 rounded-lg bg-primary-container text-on-primary text-label-lg glow-cyan active:scale-95 transition flex items-center gap-2"><span class="material-symbols-outlined">link</span>Reconnect Folder</button> <button data-act="pickFolder" class="px-5 py-2.5 rounded-lg bg-surface-container-high border border-outline-variant/40 text-label-lg hover:bg-surface-variant/40 transition">Choose Another</button>`; }
+  else if (state.folderName && !state.handle && !state.fallback) { body = `This browser can’t remember “${esc(state.folderName)}” between visits. Select it again to continue. For one-click reconnect, use Chrome or Edge.`; }
+  else if (state.folderName) { icon = 'videocam_off'; title = 'No videos found'; body = `“${esc(state.folderName)}” doesn’t contain any video files I can recognise. Try another folder.`; }
+  el.innerHTML = `<div class="rounded-2xl border border-outline-variant/40 bg-surface-container-low/60 backdrop-blur-sm glow-cyan-border min-h-[60vh] flex flex-col items-center justify-center text-center p-10 gap-5">
+    <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-container/30 to-surface-dim border border-primary/30 flex items-center justify-center glow-cyan-sm"><span class="material-symbols-outlined text-primary text-4xl ${state.scanning ? 'animate-spin' : ''}">${icon}</span></div>
+    <h1 class="text-headline-lg">${title}</h1><p class="text-body-lg text-on-surface-variant max-w-xl">${body}</p>
+    <div class="flex gap-3 flex-wrap justify-center">${btn}</div>
+    ${!window.showDirectoryPicker ? `<p class="text-body-sm text-outline max-w-md">Your browser doesn’t support persistent folder access, so the folder must be re-selected each visit and playlists are kept in browser storage only.</p>` : ''}
+  </div>`;
+}
+function heroItem() {
+  if (state.currentId && state.byId.has(state.currentId)) return state.byId.get(state.currentId);
+  return continueList()[0] || [...state.items].sort((a, b) => b.mtime - a.mtime)[0] || null;
+}
+function renderHero() {
+  const it = heroItem(); const bg = $('#heroBg');
+  if (!it) return;
+  if (!state.started) ensureMeta(it);
+  bg.style.backgroundImage = it.meta && it.meta.img ? `url('${it.meta.img}')` : '';
+  const m = it.meta, res = m && m.h ? resLabel(m.h) : qualityTag(it.name), playing = state.currentId === it.id;
+  $('#heroChips').innerHTML = `<span class="px-3 py-1 rounded bg-black/70 backdrop-blur-md border border-white/10 text-label-sm font-mono-metric text-primary flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>${playing ? 'NOW PLAYING' : 'FEATURED'}</span>`
+    + (m && m.w ? `<span class="px-2.5 py-1 rounded bg-black/60 backdrop-blur-md border border-white/10 text-label-sm font-mono-metric text-tertiary">${m.w}×${m.h}</span>` : '')
+    + `<span class="px-2.5 py-1 rounded bg-black/60 backdrop-blur-md border border-white/10 text-label-sm font-mono-metric text-on-surface-variant">${esc(it.ext.toUpperCase())} • ${esc(fmtSize(it.size))}</span>`;
+  const p = prog(it.id);
+  $('#heroInfo').innerHTML = `<div class="flex items-center gap-3 flex-wrap">
+      <span class="px-2 py-0.5 rounded bg-primary-container text-on-primary text-[11px] font-bold tracking-wider">${p && p.t > 5 && !p.done ? 'CONTINUE WATCHING' : 'UP NEXT'}</span>
+      ${it.year ? `<span class="px-2 py-0.5 rounded bg-surface-container-high/80 border border-outline-variant/30 text-on-surface text-label-sm">${esc(it.year)}</span>` : ''}
+      ${m && m.dur ? `<span class="px-2 py-0.5 rounded bg-surface-container-high/80 border border-outline-variant/30 text-on-surface text-label-sm">${fmtDur(m.dur)}</span>` : ''}
+      ${res ? `<span class="px-2 py-0.5 rounded bg-tertiary/20 text-tertiary font-mono-metric text-label-sm border border-tertiary/30">${res}</span>` : ''}
+    </div>
+    <h1 class="text-headline-lg font-bold text-on-surface tracking-tight drop-shadow-md">${esc(it.title)}</h1>
+    <p class="text-body-md text-on-surface-variant line-clamp-2 drop-shadow">${esc(it.top ? it.top + ' / ' : '')}${esc(it.name)}${p && p.t > 5 && !p.done ? ' — resume at ' + fmtTime(p.t) : ''}</p>`;
+}
+function renderPills() {
+  const tops = [...new Set(state.items.map(i => i.top))].filter(Boolean).sort().slice(0, 10);
+  const defs = [['all', 'All Videos', 'stars'], ['progress', 'In Progress'], ['unwatched', 'Unwatched'], ['watched', 'Watched'], ...tops.map(t => ['f:' + t, t, 'folder'])];
+  if (tops.length && state.items.some(i => !i.top)) defs.push(['f:', 'Library root', 'folder']);
+  $('#pills').innerHTML = defs.map(([k, label, ic]) => {
+    const on = state.filter === k;
+    return `<button data-act="filter" data-k="${esc(k)}" class="px-4 py-1.5 rounded-full text-label-md whitespace-nowrap flex items-center gap-2 transition border ${on ? 'bg-primary-container/15 text-primary border-primary/50 shadow-sm' : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface border-outline-variant/30'}">${ic ? `<span class="material-symbols-outlined text-base ${on ? 'fill' : ''}">${ic}</span>` : ''}<span>${esc(label)}</span></button>`;
+  }).join('');
+}
+function renderContinue() {
+  const l = continueList(), el = $('#continueSection');
+  if (!l.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="flex items-center gap-3"><div class="w-2.5 h-6 bg-primary-container rounded-full glow-cyan-sm"></div><h2 class="text-headline-sm">Continue Watching</h2><span class="px-2 py-0.5 rounded-full bg-surface-container-high text-primary font-mono-metric text-label-sm">${l.length} in progress</span></div>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">${l.map(i => card(i, { cont: true })).join('')}</div>`;
+}
+function renderLibrary() {
+  const l = filtered(), el = $('#librarySection');
+  const shown = l.slice(0, state.limit);
+  el.innerHTML = `<div class="flex items-center gap-3"><div class="w-2.5 h-6 bg-tertiary rounded-full"></div><h2 class="text-headline-sm">Library</h2><span class="text-label-sm text-outline">${l.length} ${l.length === 1 ? 'video' : 'videos'}${state.search ? ' matching “' + esc(state.search) + '”' : ''}</span></div>
+  ${shown.length ? `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5">${shown.map(i => card(i)).join('')}</div>` : `<div class="py-16 text-center text-on-surface-variant">Nothing matches this view.</div>`}
+  ${l.length > shown.length ? `<div class="flex justify-center pt-2"><button data-act="more" class="px-5 py-2 rounded-lg bg-surface-container-high border border-outline-variant/40 text-label-md hover:bg-surface-variant/40 transition">Show ${Math.min(60, l.length - shown.length)} more (${l.length - shown.length} remaining)</button></div>` : ''}`;
+}
+function plItems(p) { return p.items.map(id => state.byId.get(id)).filter(Boolean); }
+function renderPlaylists() {
+  const g = $('#playlistGrid');
+  g.innerHTML = state.playlists.map(p => {
+    const its = plItems(p), first = its[0], img = first && first.meta && first.meta.img;
+    const total = its.reduce((a, i) => a + (i.meta && i.meta.dur || 0), 0);
+    return `<div data-act="openPl" data-id="${p.id}" class="p-4 rounded-xl bg-surface-container-low border border-outline-variant/30 hover:border-primary/40 transition flex gap-4 items-center group cursor-pointer">
+      <div class="relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container flex items-center justify-center">${img ? `<img src="${img}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"/>` : `<span class="material-symbols-outlined text-3xl text-outline/60">queue_music</span>`}
+        <div class="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><span class="material-symbols-outlined text-primary text-3xl fill">play_circle</span></div></div>
+      <div class="space-y-1 min-w-0"><span class="text-label-sm font-mono-metric text-tertiary">${p.items.length} video${p.items.length === 1 ? '' : 's'}${total ? ' • ' + fmtDur(total) : ''}</span>
+        <h3 class="text-label-lg text-on-surface group-hover:text-primary transition-colors line-clamp-1">${esc(p.name)}</h3>
+        <p class="text-body-sm text-on-surface-variant line-clamp-2">${its.slice(0, 3).map(i => esc(i.title)).join(' · ') || 'Empty — add videos from the library'}</p></div></div>`;
+  }).join('') + `<button data-act="newPlaylist" class="p-4 rounded-xl border border-dashed border-outline-variant/50 hover:border-primary/50 text-on-surface-variant hover:text-primary transition flex items-center justify-center gap-2 min-h-[7rem]"><span class="material-symbols-outlined">add</span><span class="text-label-md">New playlist</span></button>`;
+}
+function renderStats() {
+  const total = state.items.reduce((a, i) => a + i.size, 0);
+  const exts = {}; state.items.forEach(i => exts[i.ext] = (exts[i.ext] || 0) + 1);
+  const extStr = Object.entries(exts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([e, n]) => `${e.toUpperCase()} ×${n}`).join(' · ') || '—';
+  const row = (k, v, c = 'text-on-surface') => `<div class="flex justify-between items-center py-1 border-b border-outline-variant/10 gap-3"><span class="text-outline flex-shrink-0">${k}</span><span class="${c} text-right truncate">${v}</span></div>`;
+  $('#statsPanel').innerHTML = `<div class="flex items-center justify-between border-b border-outline-variant/20 pb-3"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-primary text-xl">database</span><h3 class="text-headline-sm text-base">Storage</h3></div>
+    <span class="px-2 py-0.5 rounded text-[10px] font-mono-metric ${state.writable ? 'bg-tertiary/20 text-tertiary border border-tertiary/40' : 'bg-surface-container-high text-on-surface-variant border border-outline-variant/40'}">${state.writable ? 'JSON SYNCED' : 'BROWSER ONLY'}</span></div>
+  <div class="space-y-2 font-mono-metric text-label-sm">
+    ${row('Folder', esc(state.folderName || '—'))}${row('Videos', state.items.length, 'text-primary font-bold')}${row('Total size', fmtSize(total))}${row('Formats', esc(extStr))}
+    ${row('Playlist file', state.writable ? JSON_NAME : 'localStorage', state.writable ? 'text-tertiary' : 'text-on-surface')}
+    ${row('Playlists', state.playlists.length)}
+  </div>
+  <div class="grid grid-cols-2 gap-2">
+    <button data-act="rescan" class="py-2.5 rounded-lg bg-surface-container-high hover:bg-surface-variant text-on-surface border border-outline-variant/40 text-label-md flex items-center justify-center gap-2 transition"><span class="material-symbols-outlined text-base">sync</span>Rescan</button>
+    <button data-act="exportJson" class="py-2.5 rounded-lg bg-surface-container-high hover:bg-surface-variant text-on-surface border border-outline-variant/40 text-label-md flex items-center justify-center gap-2 transition"><span class="material-symbols-outlined text-base">download</span>Export JSON</button>
+  </div>`;
+}
+
+/* ---------- modals ---------- */
+function openModal(html) {
+  const m = $('#modal'); m.innerHTML = `<div class="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-xl bg-[#161C2E]/95 glow-cyan-border p-6 space-y-4" data-stop>${html}</div>`;
+  m.classList.remove('hidden'); m.classList.add('flex');
+}
+function closeModal() { const m = $('#modal'); m.classList.add('hidden'); m.classList.remove('flex'); m.innerHTML = ''; }
+$('#modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
+function promptName(title, initial, okLabel, cb) {
+  openModal(`<h3 class="text-headline-sm">${esc(title)}</h3><input id="nameIn" value="${esc(initial || '')}" maxlength="60" placeholder="Playlist name" class="w-full bg-surface-container-low border border-outline-variant/40 rounded-lg px-3 py-2 text-body-md focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container/40"/>
+  <div class="flex justify-end gap-2"><button data-act="closeModal" class="px-4 py-2 rounded-lg bg-surface-container-high border border-outline-variant/40 text-label-md">Cancel</button><button id="nameOk" class="px-4 py-2 rounded-lg bg-primary-container text-on-primary text-label-md glow-cyan-sm">${esc(okLabel)}</button></div>`);
+  const inp = $('#nameIn'); inp.focus(); inp.select();
+  const go = () => { const v = inp.value.trim(); if (!v) return; closeModal(); cb(v); };
+  $('#nameOk').onclick = go; inp.onkeydown = e => { if (e.key === 'Enter') go(); };
+}
+function newPlaylist(thenAdd) {
+  promptName('New playlist', '', 'Create', name => {
+    const p = { id: uid(), name, items: thenAdd ? [thenAdd] : [], created: Date.now() };
+    state.playlists.push(p); savePlaylists(); renderAll();
+    toast(thenAdd ? `Added to “${name}”` : `Created “${name}”`);
+  });
+}
+function addToPlaylistModal(id) {
+  const it = state.byId.get(id); if (!it) return;
+  openModal(`<h3 class="text-headline-sm">Add to playlist</h3><p class="text-body-sm text-on-surface-variant truncate">${esc(it.title)}</p>
+  <div class="space-y-1">${state.playlists.map(p => { const has = p.items.includes(id); return `<button data-act="togglePl" data-pl="${p.id}" data-id="${esc(id)}" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-surface-variant/40 transition text-left"><span class="material-symbols-outlined ${has ? 'text-primary fill' : 'text-outline'}">${has ? 'check_box' : 'check_box_outline_blank'}</span><span class="flex-1 truncate text-label-lg">${esc(p.name)}</span><span class="text-label-sm font-mono-metric text-outline">${p.items.length}</span></button>`; }).join('') || '<p class="text-body-sm text-outline py-2">No playlists yet.</p>'}</div>
+  <div class="flex justify-between gap-2 pt-2"><button data-act="newPlaylistAdd" data-id="${esc(id)}" class="px-4 py-2 rounded-lg bg-surface-container-high border border-outline-variant/40 text-label-md flex items-center gap-2"><span class="material-symbols-outlined text-base">add</span>New playlist</button><button data-act="closeModal" class="px-4 py-2 rounded-lg bg-primary-container text-on-primary text-label-md">Done</button></div>`);
+}
+function playlistModal(plId) {
+  const p = state.playlists.find(x => x.id === plId); if (!p) return;
+  const its = p.items.map(id => ({ id, it: state.byId.get(id) }));
+  openModal(`<div class="flex items-start justify-between gap-3"><div class="min-w-0"><h3 class="text-headline-md truncate">${esc(p.name)}</h3><p class="text-body-sm text-on-surface-variant">${p.items.length} video${p.items.length === 1 ? '' : 's'}</p></div>
+    <button data-act="closeModal" class="p-1.5 rounded-lg hover:bg-surface-variant/40"><span class="material-symbols-outlined">close</span></button></div>
+  <div class="flex gap-2 flex-wrap"><button data-act="plPlay" data-pl="${p.id}" class="px-4 py-2 rounded-lg bg-primary-container text-on-primary text-label-md flex items-center gap-2 glow-cyan-sm"><span class="material-symbols-outlined text-base fill">play_arrow</span>Play all</button>
+    <button data-act="plShuffle" data-pl="${p.id}" class="px-4 py-2 rounded-lg bg-surface-container-high border border-outline-variant/40 text-label-md flex items-center gap-2"><span class="material-symbols-outlined text-base">shuffle</span>Shuffle</button>
+    <button data-act="plRename" data-pl="${p.id}" class="px-4 py-2 rounded-lg bg-surface-container-high border border-outline-variant/40 text-label-md flex items-center gap-2"><span class="material-symbols-outlined text-base">edit</span>Rename</button>
+    <button data-act="plDelete" data-pl="${p.id}" class="px-4 py-2 rounded-lg bg-error-container/40 border border-error/30 text-error text-label-md flex items-center gap-2"><span class="material-symbols-outlined text-base">delete</span>Delete</button></div>
+  <div class="space-y-1">${its.map(({ id, it }) => it ? `<div class="flex items-center gap-3 p-2 rounded-lg hover:bg-surface-variant/30 group">
+      <button data-act="plPlayOne" data-pl="${p.id}" data-id="${esc(id)}" class="relative w-24 aspect-video rounded overflow-hidden bg-surface-container flex-shrink-0"><span class="pz absolute inset-0" data-id="${esc(id)}" data-nodur="1">${it.meta && it.meta.img ? `<img src="${it.meta.img}" class="w-full h-full object-cover"/>` : ''}</span><span class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition"><span class="material-symbols-outlined text-primary fill">play_arrow</span></span></button>
+      <div class="min-w-0 flex-1"><div class="text-label-lg truncate">${esc(it.title)}</div><div class="text-body-sm text-outline truncate">${esc(fmtSize(it.size))} • ${esc(it.ext.toUpperCase())}</div></div>
+      <button data-act="plRemove" data-pl="${p.id}" data-id="${esc(id)}" class="p-1.5 rounded-lg text-outline hover:text-error hover:bg-surface-variant/40" title="Remove"><span class="material-symbols-outlined text-lg">remove_circle_outline</span></button></div>`
+    : `<div class="flex items-center gap-3 p-2 rounded-lg opacity-60"><span class="material-symbols-outlined text-outline">report</span><div class="flex-1 min-w-0"><div class="text-label-lg truncate">${esc(id.split('/').pop())}</div><div class="text-body-sm text-outline">Missing from this folder</div></div><button data-act="plRemove" data-pl="${p.id}" data-id="${esc(id)}" class="p-1.5 rounded-lg text-outline hover:text-error"><span class="material-symbols-outlined text-lg">remove_circle_outline</span></button></div>`).join('') || '<p class="text-body-sm text-outline py-4 text-center">This playlist is empty. Hover a video in the library and press “add to playlist”.</p>'}</div>`);
+  observePz();
+}
+function infoModal(id) {
+  const it = state.byId.get(id); if (!it) return; const m = it.meta;
+  const row = (k, v) => `<div class="flex justify-between gap-4 py-1.5 border-b border-outline-variant/10"><span class="text-outline">${k}</span><span class="text-on-surface text-right break-all">${esc(v)}</span></div>`;
+  openModal(`<div class="flex items-start justify-between gap-3"><h3 class="text-headline-sm">${esc(it.title)}</h3><button data-act="closeModal" class="p-1.5 rounded-lg hover:bg-surface-variant/40"><span class="material-symbols-outlined">close</span></button></div>
+  <div class="font-mono-metric text-label-sm">${row('File', it.name)}${row('Path', it.id)}${row('Size', fmtSize(it.size))}${row('Container', it.ext.toUpperCase() + (it.known ? '' : ' (unrecognised extension)'))}${m && m.w ? row('Resolution', m.w + '×' + m.h) : ''}${m && m.dur ? row('Duration', fmtTime(m.dur)) : ''}${row('Modified', new Date(it.mtime).toLocaleString())}${row('Subtitles', it.sub ? it.sub.name : 'none found')}</div>`);
+}
+
+/* ---------- player ---------- */
+const video = $('#video'), hero = $('#hero');
+let objUrl = null, subUrl = null, lastSave = 0;
+video.volume = jget(LS.volume, 0.8); setVolUI();
+
+function stopPlayback() {
+  video.pause(); video.removeAttribute('src'); video.load();
+  if (objUrl) URL.revokeObjectURL(objUrl); objUrl = null;
+  state.currentId = null; state.queue = []; state.qi = -1; state.started = false;
+  hero.classList.remove('started', 'is-playing');
+}
+async function playItem(id, opts = {}) {
+  const it = state.byId.get(id); if (!it) return;
+  if (opts.queue) state.queue = opts.queue.slice();
+  if (!state.queue.includes(id)) state.queue = [id];
+  state.qi = state.queue.indexOf(id);
+  state.currentId = id; state.attempt = 0; state.started = true; it.broken = false;
+  hero.classList.add('started');
+  await loadSource(it);
+  renderHero(); renderContinue(); renderLibrary(); updateNow(); observePz();
+  if (opts.scroll !== false) window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+const MIMES = [null, 'video/mp4', 'video/webm', 'video/x-matroska', 'video/quicktime'];
+async function loadSource(it) {
+  if (objUrl) { URL.revokeObjectURL(objUrl); objUrl = null; }
+  const type = MIMES[state.attempt];
+  const blob = type === null ? it.file : it.file.slice(0, it.file.size, type);
+  objUrl = URL.createObjectURL(blob);
+  video.src = objUrl;
+  video.onerror = () => {
+    if (state.currentId !== it.id) return;
+    state.attempt++;
+    if (state.attempt < MIMES.length) { loadSource(it); return; }
+    it.broken = true; renderLibrary(); observePz();
+    toast(`Can’t play “${it.title}” — this browser doesn’t support its codec (common with HEVC/AC3/DTS). Try Edge/Chrome with hardware HEVC, or convert the file.`, 7000);
+    hero.classList.remove('is-playing');
+  };
+  setupSubtitles(it);
+  try { await video.play(); } catch (e) { if (e.name !== 'NotAllowedError' && e.name !== 'AbortError') console.warn(e); }
+}
+async function setupSubtitles(it) {
+  $$('track', video).forEach(t => t.remove());
+  if (subUrl) { URL.revokeObjectURL(subUrl); subUrl = null; }
+  const btn = $('#btnCC');
+  if (!it.sub) { btn.classList.add('hidden'); return; }
+  try {
+    const f = await it.sub.getFile(); let txt = await f.text();
+    if (/\.srt$/i.test(it.sub.name)) txt = 'WEBVTT\n\n' + txt.replace(/\r+/g, '').replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2');
+    subUrl = URL.createObjectURL(new Blob([txt], { type: 'text/vtt' }));
+    const tr = document.createElement('track'); tr.kind = 'subtitles'; tr.label = 'Subtitles'; tr.src = subUrl; tr.default = true;
+    video.appendChild(tr); tr.onload = () => { tr.track.mode = state.subsOn ? 'showing' : 'hidden'; };
+    setTimeout(() => { if (tr.track) tr.track.mode = state.subsOn ? 'showing' : 'hidden'; }, 300);
+    btn.classList.remove('hidden'); btn.classList.toggle('text-primary', state.subsOn);
+  } catch { btn.classList.add('hidden'); }
+}
+function next(dir = 1) {
+  const n = state.qi + dir;
+  if (n >= 0 && n < state.queue.length) playItem(state.queue[n], { scroll: false });
+  else if (dir > 0) { toast('End of queue'); }
+}
+function updateNow() {
+  const it = state.currentId && state.byId.get(state.currentId);
+  $('#dockTitle').textContent = it ? it.title : 'Nothing playing';
+  $('#dockSub').textContent = it ? (it.top ? it.top + ' • ' : '') + it.name : 'Pick a title from your library';
+  const m = it && it.meta;
+  $('#dockTech').textContent = it ? [it.ext.toUpperCase(), m && m.h ? resLabel(m.h) : '', fmtSize(it.size), state.queue.length > 1 ? `${state.qi + 1}/${state.queue.length}` : ''].filter(Boolean).join(' • ') : '';
+  $('#dockThumb').innerHTML = m && m.img ? `<img src="${m.img}" class="w-full h-full object-cover"/>` : `<span class="material-symbols-outlined text-outline/60">movie</span>`;
+}
+function togglePlay() {
+  if (!state.currentId) { const it = heroItem(); if (it) playItem(it.id, { queue: filtered().map(i => i.id), scroll: false }); return; }
+  video.paused ? video.play().catch(() => {}) : video.pause();
+}
+function persistNow(force) {
+  const id = state.currentId; if (!id || !isFinite(video.duration) || !video.duration) return;
+  const t = video.currentTime, d = video.duration, now = Date.now();
+  if (!force && now - lastSave < 4000) return; lastSave = now;
+  const done = t / d > 0.95;
+  state.progress[id] = { t: done ? 0 : t, d, u: now, done: done || (state.progress[id] && state.progress[id].done && t < 5) };
+  saveProgress();
+}
+video.addEventListener('loadedmetadata', () => {
+  const it = state.byId.get(state.currentId); if (!it) return;
+  const p = prog(it.id);
+  if (p && p.t > 5 && p.t < video.duration - 10 && !p.done) video.currentTime = p.t;
+  it.meta = Object.assign({}, it.meta, { dur: video.duration, w: video.videoWidth, h: video.videoHeight });
+  $('#tDur').textContent = fmtTime(video.duration);
+  applyMeta(it); updateNow();
+});
+video.addEventListener('timeupdate', () => {
+  const d = video.duration || 0;
+  $('#tCur').textContent = fmtTime(video.currentTime); $('#tDur').textContent = fmtTime(d);
+  if (!scrubbing) $('#scrubFill').style.width = d ? (video.currentTime / d * 100) + '%' : '0%';
+  persistNow(false);
+});
+video.addEventListener('play', () => { hero.classList.add('is-playing'); $('#playIcon').textContent = 'pause'; renderHero(); });
+video.addEventListener('pause', () => { hero.classList.remove('is-playing'); $('#playIcon').textContent = 'play_arrow'; persistNow(true); renderContinue(); observePz(); });
+video.addEventListener('ended', () => {
+  const id = state.currentId; if (id) { state.progress[id] = { t: 0, d: video.duration, u: Date.now(), done: true }; saveProgress(); }
+  renderContinue(); renderLibrary(); observePz();
+  if (state.qi + 1 < state.queue.length) next(1);
+});
+window.addEventListener('beforeunload', () => persistNow(true));
+video.addEventListener('click', togglePlay);
+$('#heroPlay').addEventListener('click', togglePlay);
+$('#btnPlay').addEventListener('click', togglePlay);
+$('#btnBack').addEventListener('click', () => video.currentTime = Math.max(0, video.currentTime - 10));
+$('#btnFwd').addEventListener('click', () => video.currentTime = Math.min(video.duration || 0, video.currentTime + 10));
+$('#btnPrev').addEventListener('click', () => (video.currentTime > 5 || state.qi <= 0) ? (video.currentTime = 0) : next(-1));
+$('#btnNext').addEventListener('click', () => next(1));
+$('#btnFs').addEventListener('click', () => document.fullscreenElement ? document.exitFullscreen() : video.requestFullscreen && video.requestFullscreen());
+document.addEventListener('fullscreenchange', () => { video.controls = document.fullscreenElement === video; });
+$('#btnPip').addEventListener('click', () => { if (document.pictureInPictureElement) document.exitPictureInPicture(); else if (video.readyState && video.requestPictureInPicture) video.requestPictureInPicture().catch(() => {}); });
+$('#btnCC').addEventListener('click', () => { state.subsOn = !state.subsOn; const t = video.textTracks[0]; if (t) t.mode = state.subsOn ? 'showing' : 'hidden'; $('#btnCC').classList.toggle('text-primary', state.subsOn); });
+$('#btnSpeed').addEventListener('click', () => { const i = (SPEEDS.indexOf(video.playbackRate) + 1) % SPEEDS.length; video.playbackRate = SPEEDS[i]; $('#btnSpeed').textContent = SPEEDS[i] + '×'; });
+$('#btnTheater').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+$('#btnMute').addEventListener('click', () => { video.muted = !video.muted; setVolUI(); });
+function setVolUI() {
+  const v = video.muted ? 0 : video.volume;
+  $('#volFill').style.width = (v * 100) + '%';
+  $('#volIcon').textContent = v === 0 ? 'volume_off' : v < 0.5 ? 'volume_down' : 'volume_up';
+}
+function slider(el, cb) {
+  let drag = false;
+  const pos = e => { const r = el.getBoundingClientRect(); return Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)); };
+  el.addEventListener('pointerdown', e => { drag = true; el.setPointerCapture(e.pointerId); cb(pos(e), 'down'); });
+  el.addEventListener('pointermove', e => { if (drag) cb(pos(e), 'move'); });
+  el.addEventListener('pointerup', e => { if (drag) { drag = false; cb(pos(e), 'up'); } });
+}
+let scrubbing = false;
+slider($('#scrub'), (f, phase) => {
+  if (!video.duration) return;
+  scrubbing = phase !== 'up'; $('#scrubFill').style.width = (f * 100) + '%';
+  if (phase === 'up' || phase === 'down') video.currentTime = f * video.duration;
+});
+$('#scrub').addEventListener('pointermove', e => {
+  const r = e.currentTarget.getBoundingClientRect(), f = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), tip = $('#scrubTip');
+  tip.classList.remove('hidden'); tip.style.left = (f * 100) + '%'; tip.textContent = fmtTime(f * (video.duration || 0));
+});
+$('#scrub').addEventListener('pointerleave', () => $('#scrubTip').classList.add('hidden'));
+slider($('#vol'), f => { video.muted = false; video.volume = f; jset(LS.volume, f); setVolUI(); });
+
+/* ---------- actions ---------- */
+function scrollToEl(sel) { const el = $(sel); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + scrollY - 80, behavior: 'smooth' }); }
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-act],[data-nav],[data-card]'); if (!t) return;
+  if (t.dataset.nav) { e.preventDefault(); const n = t.dataset.nav;
+    if (n === 'recent') { state.sort = 'recent'; state.filter = 'all'; $('#sort').value = 'recent'; renderPills(); renderLibrary(); observePz(); }
+    scrollToEl(n === 'continue' ? '#continueSection' : n === 'playlists' ? '#playlistsSection' : '#librarySection'); return; }
+  const a = t.dataset.act, id = t.dataset.id, plId = t.dataset.pl;
+  if (!a) { // card body click
+    const cid = t.dataset.card; const ctx = t.closest('#continueSection') ? continueList() : filtered();
+    playItem(cid, { queue: ctx.map(i => i.id) }); return; }
+  e.preventDefault(); e.stopPropagation();
+  switch (a) {
+    case 'pickFolder': pickFolder(); break;
+    case 'reconnect': reconnect(); break;
+    case 'rescan': if (state.handle) scan().then(() => toast('Library refreshed')); else $('#folderInput').click(); break;
+    case 'play': { const ctx = t.closest('#continueSection') ? continueList() : filtered(); playItem(id, { queue: ctx.map(i => i.id) }); break; }
+    case 'addpl': addToPlaylistModal(id); break;
+    case 'info': infoModal(id); break;
+    case 'filter': state.filter = t.dataset.k; state.limit = 60; renderPills(); renderLibrary(); observePz(); break;
+    case 'more': state.limit += 60; renderLibrary(); observePz(); break;
+    case 'newPlaylist': newPlaylist(); break;
+    case 'newPlaylistAdd': closeModal(); newPlaylist(id); break;
+    case 'openPl': playlistModal(t.dataset.id); break;
+    case 'closeModal': closeModal(); break;
+    case 'togglePl': { const p = state.playlists.find(x => x.id === plId); if (!p) break; const i = p.items.indexOf(id); i >= 0 ? p.items.splice(i, 1) : p.items.push(id); savePlaylists(); renderAll(); addToPlaylistModal(id); break; }
+    case 'plPlay': case 'plShuffle': { const p = state.playlists.find(x => x.id === plId); const its = p ? plItems(p) : []; if (!its.length) { toast('Nothing playable in this playlist'); break; }
+      let q = its.map(i => i.id); if (a === 'plShuffle') q.sort(() => Math.random() - 0.5);
+      closeModal(); playItem(q[0], { queue: q }); break; }
+    case 'plPlayOne': { const p = state.playlists.find(x => x.id === plId); const q = plItems(p).map(i => i.id); closeModal(); playItem(id, { queue: q }); break; }
+    case 'plRemove': { const p = state.playlists.find(x => x.id === plId); p.items = p.items.filter(x => x !== id); savePlaylists(); renderAll(); playlistModal(plId); break; }
+    case 'plRename': { const p = state.playlists.find(x => x.id === plId); promptName('Rename playlist', p.name, 'Save', n => { p.name = n; savePlaylists(); renderAll(); playlistModal(plId); }); break; }
+    case 'plDelete': { const p = state.playlists.find(x => x.id === plId);
+      openModal(`<h3 class="text-headline-sm">Delete “${esc(p.name)}”?</h3><p class="text-body-sm text-on-surface-variant">Your video files are not touched — only the playlist is removed.</p><div class="flex justify-end gap-2"><button data-act="closeModal" class="px-4 py-2 rounded-lg bg-surface-container-high border border-outline-variant/40 text-label-md">Cancel</button><button id="delOk" class="px-4 py-2 rounded-lg bg-error-container text-error text-label-md">Delete</button></div>`);
+      $('#delOk').onclick = () => { state.playlists = state.playlists.filter(x => x.id !== plId); savePlaylists(); closeModal(); renderAll(); }; break; }
+    case 'exportJson': { const blob = new Blob([JSON.stringify({ version: 1, folder: state.folderName, exported: new Date().toISOString(), playlists: state.playlists }, null, 2)], { type: 'application/json' });
+      const u = URL.createObjectURL(blob), l = document.createElement('a'); l.href = u; l.download = JSON_NAME; l.click(); setTimeout(() => URL.revokeObjectURL(u), 1000); break; }
+  }
+});
+$('#search').addEventListener('input', e => { state.search = e.target.value; state.limit = 60; renderLibrary(); observePz(); });
+$('#search').addEventListener('keydown', e => { if (e.key === 'Enter') scrollToEl('#librarySection'); });
+$('#sort').addEventListener('change', e => { state.sort = e.target.value; renderLibrary(); observePz(); });
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); $('#search').focus(); return; }
+  if (e.key === 'Escape') { closeModal(); return; }
+  if (/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) return;
+  if (e.key === ' ') { e.preventDefault(); togglePlay(); }
+  else if (e.key === 'ArrowLeft') video.currentTime = Math.max(0, video.currentTime - 10);
+  else if (e.key === 'ArrowRight') video.currentTime = Math.min(video.duration || 0, video.currentTime + 10);
+  else if (e.key === 'ArrowUp') { e.preventDefault(); video.volume = Math.min(1, video.volume + .05); jset(LS.volume, video.volume); setVolUI(); }
+  else if (e.key === 'ArrowDown') { e.preventDefault(); video.volume = Math.max(0, video.volume - .05); jset(LS.volume, video.volume); setVolUI(); }
+  else if (e.key.toLowerCase() === 'f') $('#btnFs').click();
+  else if (e.key.toLowerCase() === 'm') { video.muted = !video.muted; setVolUI(); }
+  else if (e.key.toLowerCase() === 'n') next(1);
+});
+
+/* ---------- boot ---------- */
+(async function boot() {
+  state.playlists = jget(LS.playlists, []); state.progress = jget(LS.progress, {});
+  const meta = jget(LS.folder, null);
+  if (meta) state.folderName = meta.name;
+  renderAll();
+  if (window.showDirectoryPicker && meta && !meta.fallback) {
+    const h = await idb.get('kv', 'dir');
+    if (h) {
+      state.handle = h; state.folderName = h.name; let p = 'prompt';
+      try { p = await h.queryPermission({ mode: 'readwrite' }); } catch {}
+      if (p === 'granted') { state.writable = true; await scan(); }
+      else { state.needsPermission = true; renderAll(); }
+    }
+  }
+})();
+})();
+</script>
+</body></html>
